@@ -26,42 +26,42 @@
 				half2 uv : TEXCOORD0;
 			};
 
-			fixed2 _CharLayout;
-			fixed2 _PixelSize;
+			half2 _CharLayout;
+			half2 _PixelSize;
 			sampler2D _MainTex;
 			sampler2D _CharTex;
 			
-			float lightness(fixed3 col)
+			inline fixed lightness(fixed3 col)
 			{
  				return (max(col.r, max(col.g, col.b)) + min(col.r, min(col.g, col.b))) * 0.5f;
 			}
 
-			float average(fixed3 col)
+			inline fixed average(fixed3 col)
 			{
-				return (col.r + col. g + col.b) / 3.;
+				return (col.r + col. g + col.b) * 0.3333333333f;
 			}
 
-			float luminosity(fixed3 col)
+			inline fixed luminosity(fixed3 col)
 			{
 				return (col.r * 0.21f) + (col.g * 0.72f) + (col.b * 0.07f);
 			}
 
-			fixed2 downscaledUV(fixed2 fragCoord, fixed2 pixelSize)
+			inline fixed2 downscaledUV(float2 fragCoord)
 			{
-				return floor(fragCoord / pixelSize) * pixelSize / _ScreenParams;
+				return floor(fragCoord / _PixelSize) * _PixelSize / _ScreenParams;
 			}
 
-			fixed2 characterUV(fixed2 index, fixed2 fragCoord, fixed2 pixelSize, fixed2 charCount)
+			fixed2 characterUV(fixed2 index, fixed2 fragCoord)
 			{
 				fixed2 charUVSpacing = 1.0f / _CharLayout;
-				fixed2 uv = fmod(fragCoord / pixelSize, 1.0f) / charCount; 
+				fixed2 uv = fmod(fragCoord / _PixelSize, 1.0f) / _CharLayout; 
 				return uv + (index*charUVSpacing);
 			}
 
-			fixed2 characterIndex(float gray, fixed2 charLayout)
+			half2 characterIndex(fixed gray)
 			{
-				gray = floor(gray * charLayout.x * charLayout.y) - 1;
-				return fixed2(gray % charLayout.x, floor(gray / charLayout.x));
+				half index = floor(gray * _CharLayout.x * _CharLayout.y) - 1;
+				return half2(index % _CharLayout.x, floor(index / _CharLayout.x));
 			}
 
 			v2f vert (appdata_img IN)
@@ -74,16 +74,17 @@
 
 			fixed3 frag (v2f IN) : COLOR
 			{
-				fixed2 fragCoord = IN.uv * _ScreenParams.xy;
+				float2 fragCoord = IN.uv * _ScreenParams.xy;
 
-				fixed2 mainUV = downscaledUV(fragCoord, _PixelSize);
+				fixed2 mainUV = downscaledUV(fragCoord);
 				fixed3 colour = tex2D(_MainTex, mainUV);
 
-				float gray = lightness(colour);
-				fixed2 index = characterIndex(gray, _CharLayout);
+				fixed gray = lightness(colour);
+				fixed2 index = characterIndex(gray);
 
-				half2 charUV = characterUV(index, fragCoord, _PixelSize, _CharLayout);
+				fixed2 charUV = characterUV(index, fragCoord);
 
+				return tex2D(_CharTex, charUV) * fixed3(0,gray,0);
 				return tex2D(_CharTex, charUV) * colour;
 			}
 			ENDCG
