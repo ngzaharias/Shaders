@@ -3,9 +3,8 @@
 	Properties 
 	{
 		[HideInInspector]_MainTex ("", 2D) = "white" {}
-		_CharTex ("Character Texture", 2D) = "white" {}
-		_CharLayout ("Character Layout in Texture", Vector) = (1, 1, 0, 0)
-		_CharScreen ("Screen Size in Characters", Vector) = (16, 9, 0, 0)
+		_SampleTex ("Sample Texture", 2D) = "white" {}
+		_PixelSize ("PixelSize", Vector) = (16, 16, 0, 0)
 	}
 
 	SubShader 
@@ -28,11 +27,30 @@
 				half2 uv : TEXCOORD0;
 			};
 
-			float2 _CharLayout;
-			float2 _CharScreen;
+			float2 _PixelSize;
 			sampler2D _MainTex;
-			sampler2D _CharTex;
+			sampler2D _SampleTex;
 			
+			inline fixed lightness(fixed3 col)
+			{
+ 				return (max(col.r, max(col.g, col.b)) + min(col.r, min(col.g, col.b))) * 0.5f;
+			}
+
+			inline fixed average(fixed3 col)
+			{
+				return (col.r + col. g + col.b) * 0.3333333333f;
+			}
+
+			inline fixed luminosity(fixed3 col)
+			{
+				return (col.r * 0.21f) + (col.g * 0.72f) + (col.b * 0.07f);
+			}
+
+			inline fixed2 downscaledUV(fixed2 fragCoord, fixed2 pixelSize)
+			{
+				return floor(fragCoord / pixelSize) * pixelSize / _ScreenParams;
+			}
+
 			v2f vert (appdata_img IN)
 			{
 				v2f OUT;
@@ -42,33 +60,16 @@
 				return OUT; 
 			}
 
-			//	truncate floating point numbers
-			half2 pixelise(half2 size, half2 uv)
-			{
-				size.x = 1.0f/size.x;
-				size.y = 1.0f/size.y;
-				return half2((int)(uv.x / size.x) * size.x, (int)(uv.y / size.y) * size.y);
-			}
-
 			fixed3 frag (v2f IN) : COLOR
 			{
-				half textureCount = _CharLayout.x * _CharLayout.y - 1;
-				half2 charUVSpacing = 1.0f / _CharLayout;
+				fixed2 fragCoord = IN.uv * _ScreenParams.xy;
 
 				// adjust the uv and sample the main texture
-				half2 mainUV = pixelise(_CharScreen, IN.uv);
-				fixed3 mainColour =  tex2D(_MainTex, mainUV);
+				fixed2 mainUV = downscaledUV(fragCoord, _PixelSize);
+				fixed3 colour =  tex2D(_MainTex, mainUV);
 
-				// brightness of the pixel
-				half brightness = (mainColour.r + mainColour.g + mainColour.b) / 3.0f;
-				brightness = floor(brightness * textureCount);
-
-				// determine which character to use
-				fixed2 charUV = (charUVSpacing * brightness);
-
-				// sample the charTex and multiply the our colour against it
-				// if we sampled something in the charTex then it will output colour
-				return tex2D(_CharTex, charUV);
+				fixed gray = lightness(colour);
+				return tex2D(_SampleTex, fixed2(gray, 0.5f));
 			}
 			ENDCG
 		}

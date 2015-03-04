@@ -16,6 +16,6 @@ public class ShootLight : MonoBehaviour {
     void SpawnLight()
     {
         GameObject obj = Instantiate(light, transform.position, transform.rotation) as GameObject;
-        obj.rigidbody.AddForce(transform.forward * force);
+        obj.GetComponent<Rigidbody>().AddForce(transform.forward * force);
     }
 }

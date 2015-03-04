@@ -4,8 +4,8 @@
 	{
 		[HideInInspector]_MainTex ("", 2D) = "white" {}
 		_CharTex ("Character Texture", 2D) = "white" {}
-		_CharLayout ("Character Layout in Texture", Vector) = (8, 1, 0, 0)
-		_PixelSize ("Pixel Size", Vector) = (32, 32, 0, 0)
+		_CharLayout ("Character Layout in Texture", Vector) = (8, 4, 0, 0)
+		_PixelSize ("Pixel Size", Vector) = (16, 32, 0, 0)
 	}
 
 	SubShader 
@@ -33,7 +33,7 @@
 			
 			float lightness(fixed3 col)
 			{
- 				return (max(col.r, max(col.g, col.b)) + min(col.r, min(col.g, col.b))) / 2.;
+ 				return (max(col.r, max(col.g, col.b)) + min(col.r, min(col.g, col.b))) * 0.5f;
 			}
 
 			float average(fixed3 col)
@@ -60,8 +60,8 @@
 
 			fixed2 characterIndex(float gray, fixed2 charLayout)
 			{
-				charLayout -= fixed2(1,1);
-				return floor(gray * charLayout);
+				gray = floor(gray * charLayout.x * charLayout.y) - 1;
+				return fixed2(gray % charLayout.x, floor(gray / charLayout.x));
 			}
 
 			v2f vert (appdata_img IN)
@@ -79,7 +79,7 @@
 				fixed2 mainUV = downscaledUV(fragCoord, _PixelSize);
 				fixed3 colour = tex2D(_MainTex, mainUV);
 
-				float gray = average(colour);
+				float gray = lightness(colour);
 				fixed2 index = characterIndex(gray, _CharLayout);
 
 				half2 charUV = characterUV(index, fragCoord, _PixelSize, _CharLayout);
