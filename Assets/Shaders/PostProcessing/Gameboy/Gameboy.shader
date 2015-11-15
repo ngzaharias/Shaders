@@ -66,7 +66,7 @@
 				fixed2 mainUV = downscaledUV(fragCoord);
 				fixed3 colour =  tex2D(_MainTex, mainUV);
 
-				fixed gray = lightness(colour);
+				fixed gray = average(colour);
 				return tex2D(_SampleTex, fixed2(gray,0));
 			}
 			ENDCG

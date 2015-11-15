@@ -84,7 +84,7 @@
 
 				fixed2 charUV = characterUV(index, fragCoord);
 
-				return tex2D(_CharTex, charUV) * fixed3(0,gray,0);
+				//return tex2D(_CharTex, charUV) * fixed3(0,gray,0);
 				return tex2D(_CharTex, charUV) * colour;
 			}
 			ENDCG
